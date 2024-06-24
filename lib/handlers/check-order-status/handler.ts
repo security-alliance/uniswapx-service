@@ -24,6 +24,7 @@ export class CheckOrderStatusHandler extends SfnLambdaHandler<ContainerInjected,
     containerInjected: ContainerInjected
     requestInjected: RequestInjected
   }): Promise<SfnStateInputOutput> {
+    console.log('CheckOrderStatusHandler.handleRequest', input.requestInjected)
     //make sure to change "Variable": "$.retryCount", in order-tracking-sfn.json to be 1+retryCount
     if (input.requestInjected?.retryCount > 300) {
       const stateMachineArn = input.requestInjected.stateMachineArn
@@ -67,6 +68,7 @@ export class CheckOrderStatusHandler extends SfnLambdaHandler<ContainerInjected,
       }
     } else {
       // Dutch, Dutch_V2
+      console.log('Dutch or Dutch_V2 CheckOrderStatusHandler.handleRequest')
       const response = await this.checkOrderStatusService.handleRequest(input.requestInjected)
       return {
         ...response,

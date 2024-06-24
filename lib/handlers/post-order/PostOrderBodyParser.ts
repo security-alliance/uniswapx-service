@@ -123,6 +123,7 @@ export class PostOrderBodyParser {
 
   tryParseDutchOrder(encodedOrder: string, signature: string, chainId: number, quoteId?: string) {
     try {
+      // TODO maybe sdk update to parseOrder with valid reactor config
       const order = this.uniswapXParser.parseOrder(encodedOrder, chainId)
       const orderType = this.uniswapXParser.getOrderType(order)
       if (orderType === OrderType.Limit) {
@@ -133,13 +134,37 @@ export class PostOrderBodyParser {
         throw new UnexpectedOrderTypeError(orderType)
       }
     } catch (err) {
-      this.logger.error('Unable to parse legacy Dutch order', {
-        err,
-        encodedOrder,
-        chainId,
-        signature,
-      })
-      throw err
+      try {
+        this.logger.warn('Unable to parse legacy Dutch order - trying to parse with custom reactor', {
+          err,
+          encodedOrder,
+          chainId,
+          signature,
+        })
+        const order = SDKDutchOrder.parse(encodedOrder, chainId)
+        // TODO add order type to env
+        const customReactorAddress = process.env.CUSTOM_REACTOR_ADDRESS
+        if (!customReactorAddress) {
+          this.logger.warn('CUSTOM_REACTOR_ADDRESS is not set')
+          throw new Error('CUSTOM_REACTOR_ADDRESS is not set')
+        }
+        if (order.info.reactor.toLowerCase() !== customReactorAddress.toLowerCase()) {
+          this.logger.warn('Invalid reactor address', {
+            orderReactor: order.info.reactor,
+            customReactorAddress,
+          })
+          throw new Error('Invalid reactor address')
+        }
+        return new DutchV1Order(order, signature, chainId, quoteId)
+      } catch (err) {
+        this.logger.error('Unable to parse legacy Dutch order', {
+          err,
+          encodedOrder,
+          chainId,
+          signature,
+        })
+        throw err
+      }
     }
   }
 }

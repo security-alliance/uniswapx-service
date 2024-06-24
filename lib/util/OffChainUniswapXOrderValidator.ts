@@ -46,6 +46,7 @@ export class OffChainUniswapXOrderValidator {
       return chainIdValidation
     }
 
+    // TODO update to allow for new reactor
     const reactorAddressValidation = this.validateReactorAddress(order.info.reactor, order.chainId, orderType)
     if (!reactorAddressValidation.valid) {
       return reactorAddressValidation
@@ -132,7 +133,15 @@ export class OffChainUniswapXOrderValidator {
     chainId: number,
     orderType: OrderType | undefined
   ): OrderValidationResponse {
-    if (!orderType || reactor.toLowerCase() != REACTOR_ADDRESS_MAPPING[chainId][orderType]!.toLowerCase()) {
+    const customReactorAddress = process.env.CUSTOM_REACTOR_ADDRESS
+    // Ensure orderType is defined before checking mapped address
+    const isValidAddress =
+      orderType !== undefined &&
+      ((customReactorAddress && reactor.toLowerCase() === customReactorAddress.toLowerCase()) ||
+        reactor.toLowerCase() === REACTOR_ADDRESS_MAPPING[chainId][orderType]?.toLowerCase())
+
+    if (!isValidAddress) {
+      console.log(`OffChain Invalid reactor address: ${reactor} - expected ${REACTOR_ADDRESS_MAPPING[chainId][orderType!]} or ${customReactorAddress}`)
       return {
         valid: false,
         errorString: `Invalid reactor address`,

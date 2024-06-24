@@ -73,6 +73,7 @@ export class OffChainRelayOrderValidator {
 
   private validateReactorAddress(reactor: string, chainId: number): OrderValidationResponse {
     if (reactor.toLowerCase() != REACTOR_ADDRESS_MAPPING[chainId][OrderType.Relay]!.toLowerCase()) {
+      console.log(`Relay reactor address: ${reactor}`)
       return {
         valid: false,
         errorString: `Invalid reactor address`,

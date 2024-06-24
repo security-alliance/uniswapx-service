@@ -101,6 +101,7 @@ describe('checkOrderStatusService', () => {
         orderStatus: ORDER_STATUS.OPEN,
         provider: providerMock as any,
         orderWatcher: watcherMock as any,
+        customWatcher: watcherMock as any,
         orderQuoter: validatorMock as any,
         quoteId: '',
         getFillLogAttempts: 0,

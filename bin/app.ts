@@ -321,6 +321,7 @@ envVars['PERMIT2_TENDERLY'] = process.env[`PERMIT2_TENDERLY`] || ''
 envVars['FILL_EVENT_DESTINATION_ARN'] = process.env['FILL_EVENT_DESTINATION_ARN'] || ''
 envVars['POSTED_ORDER_DESTINATION_ARN'] = process.env['POSTED_ORDER_DESTINATION'] || ''
 envVars['LABS_COSIGNER'] = process.env['LABS_COSIGNER'] || ''
+envVars['CUSTOM_REACTOR_ADDRESS'] = process.env['CUSTOM_REACTOR_ADDRESS'] || ''
 
 new APIStack(app, `${SERVICE_NAME}Stack`, {
   provisionedConcurrency: process.env.PROVISION_CONCURRENCY ? parseInt(process.env.PROVISION_CONCURRENCY) : 0,

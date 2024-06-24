@@ -9,7 +9,7 @@ import { BaseOrdersRepository } from '../../repositories/base'
 import { DutchOrdersRepository } from '../../repositories/dutch-orders-repository'
 import { setGlobalMetrics } from '../../util/metrics'
 import { SfnInjector, SfnStateInputOutput } from '../base/index'
-import { getWatcher } from './util'
+import { getCustomWatcher, getWatcher } from './util'
 export interface RequestInjected {
   log: Logger
   chainId: number
@@ -21,6 +21,7 @@ export interface RequestInjected {
   retryCount: number
   provider: ethers.providers.StaticJsonRpcProvider
   orderWatcher: UniswapXEventWatcher
+  customWatcher: UniswapXEventWatcher
   orderQuoter: OrderValidator
   orderType: OrderType
   stateMachineArn: string
@@ -57,6 +58,7 @@ export class CheckOrderStatusInjector extends SfnInjector<ContainerInjected, Req
     const orderType = event.orderType as OrderType
 
     const watcher = getWatcher(provider, chainId, orderType)
+    const customWatcher = getCustomWatcher(provider, chainId, orderType)
 
     return {
       log,
@@ -69,6 +71,7 @@ export class CheckOrderStatusInjector extends SfnInjector<ContainerInjected, Req
       retryCount: event.retryCount ? (event.retryCount as number) : 0,
       provider: provider,
       orderWatcher: watcher,
+      customWatcher: customWatcher,
       orderQuoter: quoter,
       orderType: orderType,
       stateMachineArn: event.stateMachineArn as string,

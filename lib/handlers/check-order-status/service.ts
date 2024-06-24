@@ -29,6 +29,7 @@ export type CheckOrderStatusRequest = {
   retryCount: number
   provider: ethers.providers.StaticJsonRpcProvider
   orderWatcher: UniswapXEventWatcher
+  customWatcher: UniswapXEventWatcher
   orderQuoter: OrderValidator
   quoteId: string //only used for logging
   orderType: OrderType
@@ -49,6 +50,7 @@ export class CheckOrderStatusService {
     private checkOrderStatusUtils: CheckOrderStatusUtils
   ) {}
 
+  // TODO custom orders currently getting status of error
   public async handleRequest({
     chainId,
     quoteId,
@@ -58,7 +60,8 @@ export class CheckOrderStatusService {
     retryCount,
     provider,
     orderQuoter,
-    orderWatcher,
+    orderWatcher, // TODO handle custom reactor watcher
+    customWatcher,
     orderStatus,
     orderType,
   }: CheckOrderStatusRequest): Promise<SfnStateInputOutput> {
@@ -82,14 +85,28 @@ export class CheckOrderStatusService {
       default:
         throw new Error(`Unsupported OrderType ${orderType}, No Parser Configured`)
     }
+    
+    log.info('checking order status', {
+      orderType: orderType,
+      orderHash: orderHash,
+      quoteId: quoteId,
+      chainId: chainId,
+      retryCount: retryCount,
+      startingBlockNumber: startingBlockNumber,
+    })
 
     const validation = await wrapWithTimerMetric(
+      // TODO handle custom reactor here
       orderQuoter.validate({
         order: parsedOrder,
         signature: order.signature,
       }),
       CheckOrderStatusHandlerMetricNames.GetValidationTime
     )
+    
+    log.info('validation', {
+      validation: validation,
+    })
 
     const curBlockNumber = await wrapWithTimerMetric(
       provider.getBlockNumber(),
@@ -114,8 +131,16 @@ export class CheckOrderStatusService {
     // so check for a fillEvent
     // if no fill event, process in the unfilled path
     if (validation === OrderValidation.NonceUsed || validation === OrderValidation.Expired) {
-      const fillEvent = await this.getFillEventForOrder(orderHash, fromBlock, curBlockNumber, orderWatcher)
+      console.log(`Searching for fill event for order hash: ${orderHash}`)
+      let fillEvent = await this.getFillEventForOrder(orderHash, fromBlock, curBlockNumber, orderWatcher)
+      console.log(`Standard fill event: ${fillEvent}`)
+      if (!fillEvent) {
+        console.log(`No standard fill event, checking custom fill event`)
+        fillEvent = await this.getFillEventForOrder(orderHash, fromBlock, curBlockNumber, customWatcher)
+        console.log(`Custom fill event: ${fillEvent}`)
+      }
       if (fillEvent) {
+        console.log(`Found fill event for order hash: ${orderHash}`)
         const [tx, block] = await Promise.all([
           provider.getTransaction(fillEvent.txHash),
           provider.getBlock(fillEvent.blockNumber),
@@ -146,6 +171,7 @@ export class CheckOrderStatusService {
     }
 
     //not filled
+    // TODO custom orders returning as cancelled when filled
     if (!extraUpdateInfo) {
       extraUpdateInfo = this.checkOrderStatusUtils.getUnfilledStatusFromValidation({
         validation,
@@ -281,6 +307,7 @@ export class CheckOrderStatusUtils {
       case OrderValidation.InvalidOrderFields:
       case OrderValidation.UnknownError:
         return { orderStatus: ORDER_STATUS.ERROR }
+      // TODO orders returning as cancelled when filled
       case OrderValidation.NonceUsed: {
         return {
           orderStatus: getFillLogAttempts === 0 ? ORDER_STATUS.OPEN : ORDER_STATUS.CANCELLED,

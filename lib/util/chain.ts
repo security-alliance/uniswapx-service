@@ -9,4 +9,5 @@ export enum ChainId {
 
 // If you update SUPPORTED_CHAINS, ensure you add a corresponding RPC_${chainId} environment variable.
 // lib/config.py will require it to be defined.
-export const SUPPORTED_CHAINS = [ChainId.MAINNET, ChainId.POLYGON, ChainId.SEPOLIA, ChainId.GÖRLI, ChainId.ARBITRUM_ONE]
+// export const SUPPORTED_CHAINS = [ChainId.MAINNET, ChainId.POLYGON, ChainId.SEPOLIA, ChainId.GÖRLI, ChainId.ARBITRUM_ONE]
+export const SUPPORTED_CHAINS = [ChainId.MAINNET]

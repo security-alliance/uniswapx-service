@@ -76,12 +76,15 @@ export class UniswapXOrderService {
       throw new OrderValidationFailedError(offChainValidationResult.errorString)
     }
 
+    // TODO adapt onchain validator for custom reactor
+    // if (order.info.reactor !== process.env.CUSTOM_REACTOR_ADDRESS) {
     const onChainValidator = this.onChainValidatorMap.get(chainId)
     const onChainValidationResult = await onChainValidator.validate({ order: order, signature: signature })
     if (onChainValidationResult !== OrderValidation.OK) {
       const failureReason = OrderValidation[onChainValidationResult]
       throw new OrderValidationFailedError(`Onchain validation failed: ${failureReason}`)
     }
+    // }
 
     if (order.info.input.token === ethers.constants.AddressZero) {
       throw new InvalidTokenInAddress()
