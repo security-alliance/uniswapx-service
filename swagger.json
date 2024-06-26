@@ -3,7 +3,7 @@
   "servers": [
     {
       "description": "UniswapX APIs",
-      "url": "https://api.uniswap.org/v2"
+      "url": "https://eozojk18d0.execute-api.us-east-1.amazonaws.com/prod/dutch-auction"
     }
   ],
   "info": {
